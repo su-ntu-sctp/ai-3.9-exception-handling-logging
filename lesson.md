@@ -451,39 +451,73 @@ Go back to your `LearnExceptions.java` file and add logging:
 
 <img src="https://maven.apache.org/images/apache-maven-project.png" style="background-color: white; padding: 10px">
 
-Maven is a build automation tool for Java projects (dependencies, compilation, packaging, tests).
+Maven is a build automation tool used primarily for Java projects. It is used to manage dependencies and automate the build process such as compiling source code, packaging the compiled code into a JAR file, as well as running automated tests.
 
-Check if Maven is installed:
+Check if Maven is installed by running the following command in the terminal:
 
 ```bash
 mvn -v
 ```
 
-If not, install Maven using SDKMAN:
+If not, install Maven using SDKMan.
 
 ```bash
 sdk install maven
 ```
 
-Ensure the **Maven for Java** VS Code extension is installed (usually comes with Java Extension Pack).
+Check your VSCode extensions to see if Maven for Java is installed. This should already have been installed with the Java Extension Pack.
 
 ### Creating a Maven Project
 
-Create via CLI (https://maven.apache.org/guides/getting-started/maven-in-five-minutes.html) or VS Code (Maven / Java Projects tab → **+** → `maven-archetype-quickstart` → Next).
+We can create a Maven project using CLI (https://maven.apache.org/guides/getting-started/maven-in-five-minutes.html) or using VSCode.
 
-Follow the prompts for Group Id (e.g., `sg.edu.ntu`) and Artifact Id (project name), choose folder, confirm properties, and open the project.
+In the Primary Side Bar, under the Maven or Java Projects tab, click on the plus sign to create a new Maven project.
 
-Open `pom.xml` and set the compiler to **Java 21**:
+Select the `maven-archetype-quickstart` archetype and click Next.
+
+<img src="./assets/images/maven_setup1.PNG" width=500>
+
+Select the version of Maven to use. Click Next.
+
+<img src="./assets/images/maven_setup2.PNG" width=500>
+
+Enter the group ID (`package` path), usually in reverse domain name notation e.g. sg.edu.ntu
+
+<img src="./assets/images/maven_setup3.PNG" width=500>
+
+Enter the artifact ID (project name).
+
+ <img src="./assets/images/maven_setup4.PNG" width=500>
+
+Choose a folder to place the project in.
+
+ <img src="./assets/images/maven_setup5.PNG" width=500>
+
+Hit 'enter' to use the default version value.
+
+ <img src="./assets/images/maven_setup6.PNG" width=500>
+
+The project properties will be listed for confirmation. Type 'Y' to confirm.
+
+ <img src="./assets/images/maven_setup7.PNG" width=500>
+
+The project is now created in the folder you chose.
+
+<img src="./assets/images/maven_setup8.PNG" width=500>
+
+Open the project in a new VSCode window.
+
+Open the `pom.xml` file and set the **compiler release to 21** (screenshot may show 17
+
+<img src="./assets/images/maven_setup9.PNG" width="500">
+
+Update the `pom.xml`:
 
 ```xml
 <properties>
   <maven.compiler.release>21</maven.compiler.release>
 </properties>
 ```
-
-(Alternatively, configure the `maven-compiler-plugin` with `<release>21</release>`.)
-
----
 
 ## Part 5: Logging Using `slf4j`
 
