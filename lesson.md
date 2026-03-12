@@ -1,16 +1,18 @@
+# Lesson: Exception Handling and Logging in Java
+
 ## Lesson Overview
 
-This lesson introduces **exception handling** and **logging** in Java (Java 21 ready). You’ll learn how Java throws and handles exceptions, when to use LBYL vs EAFP, how to design specific vs general handlers, and how to propagate with `throws`. You’ll also configure logging with **JUL**, adopt the **SLF4J** façade, and use **Logback** (console/file appenders) so behavior can change without touching application code.
+This lesson introduces **exception handling** and **logging** in Java (Java 21 ready). You'll learn how Java throws and handles exceptions, when to use LBYL vs EAFP, how to design specific vs general handlers, and how to propagate with `throws`. You'll also configure logging with **JUL**, adopt the **SLF4J** façade, and use **Logback** (console/file appenders) so behavior can change without touching application code.
 
 ## Lesson Objectives
 
 By the end of this lesson, learners will be able to:
-- Explain the exception model (call stack, stack trace) and handle errors with `try–catch–finally`.
-- Distinguish between **checked** and **unchecked** exceptions and choose appropriate handling or propagation with `throws`.
-- Create and use **custom exceptions** to express domain-specific failures.
-- Compare **LBYL** vs **EAFP** and justify when to use each.
-- Implement logging with **JUL**, then migrate to **SLF4J + Logback**.
-- Configure **Logback** levels/patterns and write to **console** and **file** in a Maven (Java 21) project.
+
+1. **Implement** exception handling using `try-catch-finally` and explain the call stack and stack trace
+2. **Distinguish** checked vs unchecked exceptions and build custom exceptions for domain-specific failures
+3. **Apply** logging to a Java program using JUL, then migrate to SLF4J + Logback
+
+---
 
 ## Part 1: Exceptions / Try-Catch-Finally
 
@@ -32,13 +34,13 @@ If no appropriate exception handler is found, then the program terminates.
 
 **Advantages of Exceptions**
 
-1. **Separating Error-Handling Code from "Regular" Code**  
+1. **Separating Error-Handling Code from "Regular" Code**
    The ability to throw exceptions makes it easy to separate error-handling code from regular code.
 
-2. **Propagating Errors Up the Call Stack**  
+2. **Propagating Errors Up the Call Stack**
    The ability to propagate errors up the call stack means you can write methods for the normal case and let callers handle boundary or unexpected situations.
 
-3. **Grouping and Differentiating Error Types**  
+3. **Grouping and Differentiating Error Types**
    Each exception type indicates a particular error condition. You can create your own exceptions to signal domain-specific failures.
 
 ### Looking at Our First Exception
@@ -109,7 +111,7 @@ public static void main(String[] args) {
 
 As you can see, with LBYL, the developer proactively checks preconditions before executing the code, which avoids the exception. Disadvantages include time-of-check/time-of-use gaps and duplicated checks.
 
-### Try-Catch-Finally (+ Multi-Catch)
+### Try-Catch-Finally
 
 The other approach is EAFP using a `try-catch` block.
 
@@ -132,16 +134,6 @@ try {
   System.out.println(exception);
 } finally {
   System.out.println("This is the finally block");
-}
-```
-
-**Multi-catch** (useful for related handling):
-
-```java
-try {
-  // code that may throw different exceptions
-} catch (IllegalArgumentException | IllegalStateException e) {
-  System.out.println("Bad input/state: " + e.getMessage());
 }
 ```
 
@@ -173,56 +165,11 @@ try {
 }
 ```
 
-Here is another example with a `Scanner`.
-
-```java
-import java.util.Scanner;
-
-Scanner scanner = new Scanner(System.in);
-System.out.print("Enter a number: ");
-int number = scanner.nextInt(); // may throw InputMismatchException
-System.out.println("You have entered: " + number);
-
-// Note: Do NOT close scanner wrapping System.in in small programs,
-// as closing it closes System.in for the entire JVM session.
-```
-
-A failing stack trace points us to where the exception occurred in our code:
-
-```java
-Exception in thread "main" java.util.InputMismatchException
-        at java.base/java.util.Scanner.throwFor(Scanner.java:939)
-        ...
-        at LearnExceptions.main(LearnExceptions.java:36)
-```
-
-LBYL with `Scanner`:
-
-```java
-if (scanner.hasNextInt()) {
-  int n = scanner.nextInt();
-  System.out.println(n);
-} else {
-  System.out.println("Input is not an integer");
-}
-```
-
-EAFP:
-
-```java
-try {
-  int n = scanner.nextInt();
-  System.out.println(n);
-} catch (InputMismatchException exception) {
-  System.out.println(exception);
-}
-```
-
 ### Checked vs Unchecked Exceptions
 
 #### Unchecked Exceptions
 
-`ArithmeticException`, `ArrayIndexOutOfBoundsException`, and `InputMismatchException` are **unchecked exceptions** (subclasses of `RuntimeException`). They are not checked at compile time and typically signal programming errors. Anticipate and prevent them via validation.
+`ArithmeticException` and `ArrayIndexOutOfBoundsException` are **unchecked exceptions** (subclasses of `RuntimeException`). They are not checked at compile time and typically signal programming errors. Anticipate and prevent them via validation.
 
 #### Checked Exceptions
 
@@ -231,8 +178,8 @@ try {
 **Try-with-resources (Java 7+, recommended in Java 21):**
 
 ```java
+import java.io.IOException;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.util.Scanner;
 
 try (FileInputStream f = new FileInputStream("test.txt");
@@ -240,21 +187,21 @@ try (FileInputStream f = new FileInputStream("test.txt");
   if (s.hasNextLine()) {
     System.out.println(s.nextLine());
   }
-} catch (FileNotFoundException exception) {
+} catch (IOException exception) {
   System.out.println(exception.getMessage());
 }
 ```
 
 ### Propagating Exceptions Up the Call Stack
 
-We can also propagate exceptions up the call stack. Put the previous file-reading code into a method and **do not** handle it there—let callers decide.
+We can also propagate exceptions up the call stack. Put the previous file-reading code into a method and **do not** handle it there — let callers decide.
 
 ```java
+import java.io.IOException;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.util.Scanner;
 
-public static void readFileFirstLine(String filename) throws FileNotFoundException {
+public static void readFileFirstLine(String filename) throws IOException {
   try (FileInputStream f = new FileInputStream(filename);
        Scanner s = new Scanner(f)) {
     if (s.hasNextLine()) {
@@ -272,15 +219,13 @@ And in `main`:
 public static void main(String[] args) {
   try {
     readFileFirstLine("test.txt");
-  } catch (FileNotFoundException exception) {
+  } catch (IOException exception) {
     System.out.println(exception.getMessage());
   }
 }
 ```
 
 ### General vs Specific Exception Type
-
-General exception types are `Exception` or `RuntimeException` (superclasses of most exceptions). Specific exception types are subclasses (e.g., `FileNotFoundException` ⟶ `IOException` ⟶ `Exception`).
 
 Prefer **specific** catches where possible:
 
@@ -293,9 +238,11 @@ try {
 }
 ```
 
+General exception types (`Exception`, `RuntimeException`) are superclasses — avoid catching them broadly unless you have a good reason.
+
 ---
 
-## Part 2: Custom Exception
+## Part 2: Custom Exceptions
 
 We can also create our own custom exceptions. To create a **checked** exception, extend `Exception`. To create an **unchecked** exception, extend `RuntimeException`.
 
@@ -350,7 +297,7 @@ try {
 }
 ```
 
-### 👨‍💻 Activity
+### 👨‍💻 Activity: Custom Exceptions **(10 minutes)**
 
 #### Task 1: Unchecked Custom Exception
 
@@ -367,7 +314,7 @@ public static int sumPositiveArray(int[] numbers) {
 Create a checked exception `DivideByZeroElementException`. Next, create a `divideByElementAtIndex` method that takes an array of integers and an index. Throw `DivideByZeroElementException` if the divisor is zero, and return the division result otherwise.
 
 ```java
-public static int divideByElementAtIndex(int[] numbers, int index) {
+public static int divideByElementAtIndex(int[] numbers, int index) throws DivideByZeroElementException {
   // your code here
 }
 ```
@@ -382,7 +329,7 @@ Logging records information about the program's execution and is useful for debu
 
 ### Java Logging API (JUL)
 
-Java provides a logging API called `java.util.logging` (JUL).
+Java provides a built-in logging API called `java.util.logging` (JUL).
 
 ```java
 import java.util.logging.Level;
@@ -408,42 +355,25 @@ public class LoggerDemo {
 }
 ```
 
-**Logging Levels**
+**Core Logging Levels**
 
-| Level     | Description                                                                                                              |
-| --------- | ------------------------------------------------------------------------------------------------------------------------ |
-| `SEVERE`  | Serious errors or failures that may prevent the app from functioning properly or require immediate attention.            |
-| `WARNING` | Potential problems that might lead to errors or unexpected behavior.                                                     |
-| `INFO`    | Informational messages about normal application behavior.                                                                |
-| `CONFIG`  | Configuration-related information (e.g., initialization).                                                                |
-| `FINE`    | Debugging-oriented information.                                                                                          |
-| `FINER`   | More detailed debugging information.                                                                                     |
-| `FINEST`  | The most detailed debugging information.                                                                                 |
+| Level     | Description                                                          |
+| --------- | -------------------------------------------------------------------- |
+| `SEVERE`  | Serious errors that may prevent the app from functioning properly.   |
+| `WARNING` | Potential problems that might lead to errors or unexpected behavior. |
+| `INFO`    | Informational messages about normal application behavior.            |
 
-For JUL, by default, the logging level is `INFO`. Additional configuration is needed to see `FINE`/`FINER`/`FINEST`.
-
-**Logging to a File (JUL)**
-
-```java
-import java.util.logging.*;
-
-try {
-  Handler fileHandler = new FileHandler("mylogfile.log", true);
-  fileHandler.setFormatter(new SimpleFormatter());
-  logger.addHandler(fileHandler);
-} catch (java.io.IOException e) {
-  System.out.println(e);
-}
-```
+For JUL, by default, the logging level is `INFO`. Additional configuration is needed to see finer levels like `FINE`, `FINER`, and `FINEST`.
 
 > Note: For production logs, avoid emojis and include actionable context (ids, inputs, state), but not sensitive data.
 
-### 👨‍💻 Activity
+### 👨‍💻 Activity: Add JUL Logging **(5 minutes)**
 
-Go back to your `LearnExceptions.java` file and add logging:
+Go back to your `LearnExceptions.java` file and add the following:
 
-- Add `INFO` logs when the application starts and ends.
-- Add `SEVERE` logs when an exception is caught.
+- An `INFO` log at the start of `main`: `"Application started"`
+- An `INFO` log at the end of `main`: `"Application ended"`
+- A `SEVERE` log inside each `catch` block, printing the exception message
 
 ---
 
@@ -487,19 +417,19 @@ Enter the group ID (`package` path), usually in reverse domain name notation e.g
 
 Enter the artifact ID (project name).
 
- <img src="./assets/images/maven_setup4.PNG" width=500>
+<img src="./assets/images/maven_setup4.PNG" width=500>
 
 Choose a folder to place the project in.
 
- <img src="./assets/images/maven_setup5.PNG" width=500>
+<img src="./assets/images/maven_setup5.PNG" width=500>
 
 Hit 'enter' to use the default version value.
 
- <img src="./assets/images/maven_setup6.PNG" width=500>
+<img src="./assets/images/maven_setup6.PNG" width=500>
 
 The project properties will be listed for confirmation. Type 'Y' to confirm.
 
- <img src="./assets/images/maven_setup7.PNG" width=500>
+<img src="./assets/images/maven_setup7.PNG" width=500>
 
 The project is now created in the folder you chose.
 
@@ -507,7 +437,7 @@ The project is now created in the folder you chose.
 
 Open the project in a new VSCode window.
 
-Open the `pom.xml` file and set the **compiler release to 21** (screenshot may show 17
+Open the `pom.xml` file and set the **compiler release to 21**.
 
 <img src="./assets/images/maven_setup9.PNG" width="500">
 
@@ -519,9 +449,11 @@ Update the `pom.xml`:
 </properties>
 ```
 
+---
+
 ## Part 5: Logging Using `slf4j`
 
-With our Maven project, we’ll add dependencies for SLF4J (facade) and an implementation.
+With our Maven project, we'll add dependencies for SLF4J (facade) and an implementation.
 
 ### What is `slf4j`?
 
@@ -578,7 +510,7 @@ The advantage of SLF4J is easy swapping of logging frameworks. Now switch to **L
 
 ### What is `logback`?
 
-`logback` is a modern logging framework (successor to `log4j`) that’s fast and flexible.
+`logback` is a modern logging framework (successor to `log4j`) that's fast and flexible.
 
 ### Adding Dependencies (Logback 1.5.x)
 
@@ -592,7 +524,7 @@ Remove `slf4j-simple` from `pom.xml` and add:
 </dependency>
 ```
 
-Just by changing dependencies, you’ve switched from `slf4j-simple` to `logback-classic`.
+Just by changing dependencies, you've switched from `slf4j-simple` to `logback-classic`.
 
 ### Configure `logback`
 
@@ -617,19 +549,13 @@ Run the application and check the console output. Everything should work as befo
 
 ### Logging Levels in `logback`
 
-| Level | Description                                                                  |
-| ----- | ---------------------------------------------------------------------------- |
-| TRACE | Finer-grained informational events than DEBUG.                               |
-| DEBUG | Fine-grained informational events useful for debugging.                      |
-| INFO  | Informational messages that highlight application progress.                  |
-| WARN  | Potentially harmful situations.                                              |
-| ERROR | Error events that might still allow the application to continue.             |
-
-Add an error log:
-
-```java
-logger.error("This is an error message."); // Logback/SLF4J "ERROR" ≈ JUL "SEVERE"
-```
+| Level   | Description                                                                  |
+| ------- | ---------------------------------------------------------------------------- |
+| `TRACE` | Finer-grained informational events than DEBUG.                               |
+| `DEBUG` | Fine-grained informational events useful for debugging.                      |
+| `INFO`  | Informational messages that highlight application progress.                  |
+| `WARN`  | Potentially harmful situations.                                              |
+| `ERROR` | Error events that might still allow the application to continue.             |
 
 ### Logging to a File in `logback`
 
@@ -662,10 +588,28 @@ Check `logs/application.log` after running.
 
 For further reading, refer to the [logback documentation](http://logback.qos.ch/documentation.html).
 
-### 👨‍💻 Activity
+### 👨‍💻 Activity: SLF4J + Logback **(5 minutes)**
 
-Port your code from `LearnExceptions.java` and add SLF4J+Logback logging. Trigger exceptions and verify console and file outputs.  
-Note: there is no `SEVERE` in SLF4J/Logback; use `ERROR`.
+In your Maven project `App.java`:
+
+- Add `INFO` logs for application start and end
+- Trigger an `ArithmeticException` (divide by zero) inside a `try-catch` and log it with `ERROR`
+- Run the app and verify output appears in both the console and `logs/application.log`
+- Note: SLF4J/Logback uses `ERROR` — there is no `SEVERE` like in JUL
+
+---
+
+## 🔵 Optional: Multi-catch
+
+Java lets you catch multiple exception types in a single `catch` block using the `|` operator. This is useful when two or more exceptions should be handled the same way.
+
+```java
+try {
+  // code that may throw different exceptions
+} catch (IllegalArgumentException | IllegalStateException e) {
+  System.out.println("Bad input/state: " + e.getMessage());
+}
+```
 
 ---
 
