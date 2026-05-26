@@ -2,7 +2,7 @@
 
 ## Lesson Overview
 
-This lesson introduces **exception handling** and **logging** in Java (Java 21 ready). You'll learn how Java throws and handles exceptions, when to use LBYL vs EAFP, how to design specific vs general handlers, and how to propagate with `throws`. You'll also configure logging with **JUL**, adopt the **SLF4J** façade, and use **Logback** (console/file appenders) so behavior can change without touching application code.
+This lesson introduces **exception handling** and **logging** in Java (Java 21 ready). You'll learn how Java throws and handles exceptions, when to use LBYL vs EAFP, how to design specific vs general handlers, and how to propagate with `throws`. You'll also adopt the **SLF4J** façade and use **Logback** (console/file appenders) so behavior can change without touching application code.
 
 ## Lesson Objectives
 
@@ -10,7 +10,7 @@ By the end of this lesson, learners will be able to:
 
 1. **Implement** exception handling using `try-catch-finally` and explain the call stack and stack trace
 2. **Distinguish** checked vs unchecked exceptions and build custom exceptions for domain-specific failures
-3. **Apply** logging to a Java program using JUL, then migrate to SLF4J + Logback
+3. **Apply** logging to a Java program using SLF4J + Logback
 
 ---
 
@@ -321,137 +321,25 @@ public static int divideByElementAtIndex(int[] numbers, int index) throws Divide
 
 ---
 
-## Part 3: Java Logging
+## Part 3: Maven Project Setup
 
-Create a `LoggerDemo.java` and code along.
+> ✅ You should have completed Maven setup as part of your self-study (studies.md Task 2). If you have not done so, refer to studies.md now and complete the setup before continuing.
 
-Logging records information about the program's execution and is useful for debugging and monitoring.
-
-### Java Logging API (JUL)
-
-Java provides a built-in logging API called `java.util.logging` (JUL).
-
-```java
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
-public class LoggerDemo {
-  private static final Logger logger = Logger.getLogger(LoggerDemo.class.getName());
-
-  public static void main(String[] args) {
-    logger.info("App started");
-    int[] arr1 = { 1, 2, 3, 4 };
-
-    try {
-      System.out.println(arr1[4]); // will throw
-    } catch (ArrayIndexOutOfBoundsException e) {
-      logger.log(Level.SEVERE, "Out of bounds: " + e.getMessage());
-      System.out.println(e);
-    } finally {
-      logger.warning("Be careful!");
-      logger.info("App ended");
-    }
-  }
-}
-```
-
-**Core Logging Levels**
-
-| Level     | Description                                                          |
-| --------- | -------------------------------------------------------------------- |
-| `SEVERE`  | Serious errors that may prevent the app from functioning properly.   |
-| `WARNING` | Potential problems that might lead to errors or unexpected behavior. |
-| `INFO`    | Informational messages about normal application behavior.            |
-
-For JUL, by default, the logging level is `INFO`. Additional configuration is needed to see finer levels like `FINE`, `FINER`, and `FINEST`.
-
-> Note: For production logs, avoid emojis and include actionable context (ids, inputs, state), but not sensitive data.
-
-### 👨‍💻 Activity: Add JUL Logging **(5 minutes)**
-
-Go back to your `LearnExceptions.java` file and add the following:
-
-- An `INFO` log at the start of `main`: `"Application started"`
-- An `INFO` log at the end of `main`: `"Application ended"`
-- A `SEVERE` log inside each `catch` block, printing the exception message
-
----
-
-## Part 4: Maven Project Creation
-
-<img src="https://maven.apache.org/images/apache-maven-project.png" style="background-color: white; padding: 10px">
-
-Maven is a build automation tool used primarily for Java projects. It is used to manage dependencies and automate the build process such as compiling source code, packaging the compiled code into a JAR file, as well as running automated tests.
-
-Check if Maven is installed by running the following command in the terminal:
+**Step 1** — Verify Maven is installed:
 
 ```bash
 mvn -v
 ```
 
-If not, install Maven using SDKMan.
+**Step 2** — Open your Maven project from self-study in VSCode.
 
-```bash
-sdk install maven
-```
+**Step 3** — Open `App.java` and run it. You should see `Hello World!` in the terminal.
 
-Check your VSCode extensions to see if Maven for Java is installed. This should already have been installed with the Java Extension Pack.
-
-### Creating a Maven Project
-
-We can create a Maven project using CLI (https://maven.apache.org/guides/getting-started/maven-in-five-minutes.html) or using VSCode.
-
-In the Primary Side Bar, under the Maven or Java Projects tab, click on the plus sign to create a new Maven project.
-
-Select the `maven-archetype-quickstart` archetype and click Next.
-
-<img src="./assets/images/maven_setup1.PNG" width=500>
-
-Select the version of Maven to use. Click Next.
-
-<img src="./assets/images/maven_setup2.PNG" width=500>
-
-Enter the group ID (`package` path), usually in reverse domain name notation e.g. sg.edu.ntu
-
-<img src="./assets/images/maven_setup3.PNG" width=500>
-
-Enter the artifact ID (project name).
-
-<img src="./assets/images/maven_setup4.PNG" width=500>
-
-Choose a folder to place the project in.
-
-<img src="./assets/images/maven_setup5.PNG" width=500>
-
-Hit 'enter' to use the default version value.
-
-<img src="./assets/images/maven_setup6.PNG" width=500>
-
-The project properties will be listed for confirmation. Type 'Y' to confirm.
-
-<img src="./assets/images/maven_setup7.PNG" width=500>
-
-The project is now created in the folder you chose.
-
-<img src="./assets/images/maven_setup8.PNG" width=500>
-
-Open the project in a new VSCode window.
-
-Open the `pom.xml` file and set the **compiler release to 21**.
-
-<img src="./assets/images/maven_setup9.PNG" width="500">
-
-Update the `pom.xml`:
-
-```xml
-<properties>
-  <maven.compiler.release>21</maven.compiler.release>
-</properties>
-```
+You are now ready to add SLF4J and Logback dependencies in Part 4.
 
 ---
 
-## Part 5: Logging Using `slf4j`
+## Part 4: Logging Using `slf4j`
 
 With our Maven project, we'll add dependencies for SLF4J (facade) and an implementation.
 
@@ -504,7 +392,7 @@ Run the application and check the console output.
 
 ---
 
-## Part 6: Logging Using `logback`
+## Part 5: Logging Using `logback`
 
 The advantage of SLF4J is easy swapping of logging frameworks. Now switch to **Logback**.
 

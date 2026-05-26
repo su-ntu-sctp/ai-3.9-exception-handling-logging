@@ -31,7 +31,7 @@ Watch the following video on Maven project setup:
 - 📹 [Maven Project Setup in Java — [VIDEO URL NEEDED](https://www.youtube.com/watch?v=rqGRW-ocYpY)]
   
 
-While watching, refer to **lesson.md Part 4** and pay attention to:
+While watching, refer to **lesson.md Part 3** and pay attention to:
 - What Maven is and why it is used
 - What a `pom.xml` file is and what it contains
 - How to add a dependency to a Maven project
@@ -40,6 +40,82 @@ While watching, refer to **lesson.md Part 4** and pay attention to:
 1. What is the purpose of the `pom.xml` file?
 2. What is a dependency in Maven and how do you add one?
 3. Why is it useful to use a build tool like Maven instead of managing libraries manually?
+
+### ⚠️ Pre-Class Setup — Do This Before Attending Lesson 3.9
+
+**You must have Maven installed and a Maven project created before class.** Follow the steps below completely.
+
+#### Step 1: Verify or Install Maven
+
+Check if Maven is installed by running the following command in the terminal:
+
+```bash
+mvn -v
+```
+
+If not installed, install Maven using SDKMan:
+
+```bash
+sdk install maven
+```
+
+Check your VSCode extensions to see if Maven for Java is installed. This should already have been installed with the Java Extension Pack.
+
+#### Step 2: Create Your Maven Project
+
+<img src="https://maven.apache.org/images/apache-maven-project.png" style="background-color: white; padding: 10px">
+
+We can create a Maven project using CLI (https://maven.apache.org/guides/getting-started/maven-in-five-minutes.html) or using VSCode.
+
+In the Primary Side Bar, under the Maven or Java Projects tab, click on the plus sign to create a new Maven project.
+
+Select the `maven-archetype-quickstart` archetype and click Next.
+
+<img src="./assets/images/maven_setup1.PNG" width=500>
+
+Select the version of Maven to use. Click Next.
+
+<img src="./assets/images/maven_setup2.PNG" width=500>
+
+Enter the group ID (`package` path), usually in reverse domain name notation e.g. sg.edu.ntu
+
+<img src="./assets/images/maven_setup3.PNG" width=500>
+
+Enter the artifact ID (project name).
+
+<img src="./assets/images/maven_setup4.PNG" width=500>
+
+Choose a folder to place the project in.
+
+<img src="./assets/images/maven_setup5.PNG" width=500>
+
+Hit 'enter' to use the default version value.
+
+<img src="./assets/images/maven_setup6.PNG" width=500>
+
+The project properties will be listed for confirmation. Type 'Y' to confirm.
+
+<img src="./assets/images/maven_setup7.PNG" width=500>
+
+The project is now created in the folder you chose.
+
+<img src="./assets/images/maven_setup8.PNG" width=500>
+
+Open the project in a new VSCode window.
+
+Open the `pom.xml` file and set the **compiler release to 21**.
+
+<img src="./assets/images/maven_setup9.PNG" width="500">
+
+Update the `pom.xml`:
+
+```xml
+<properties>
+  <maven.compiler.release>21</maven.compiler.release>
+</properties>
+```
+
+> ✅ Once done, verify your project runs by opening `App.java` and running it. You should see `Hello World!` in the terminal. You are now ready for class.
 
 ---
 
@@ -50,7 +126,7 @@ Watch the following video on SLF4J and Logback:
 - 📹 [SLF4J + Logback Logging in Java — https://www.youtube.com/watch?v=oiaEP57nsmI&t=922s]
   
 
-While watching, refer to **lesson.md Parts 5 and 6** and pay attention to:
+While watching, refer to **lesson.md Parts 4 and 5** and pay attention to:
 - What SLF4J is and why it is used as a facade rather than a direct logging framework
 - How to add SLF4J and Logback dependencies to `pom.xml`
 - How to configure `logback.xml` for console and file output
