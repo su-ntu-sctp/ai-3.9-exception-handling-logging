@@ -19,7 +19,7 @@ Create a Maven project called ExceptionsLoggingAssignment and solve the followin
    - Add SLF4J logging:
      - Log INFO messages for successful deposits and withdrawals
      - Log ERROR messages when exceptions are thrown
-     - Log WARN messages for suspicious activities (e.g., very large transactions)
+     - Log WARN messages for suspicious activities (e.g., transactions exceeding $10,000)
    - Test your implementation with multiple scenarios including valid and invalid operations
 
 2. **File Reader with Exception Handling and Logging Configuration**
@@ -46,6 +46,3 @@ Create a Maven project called ExceptionsLoggingAssignment and solve the followin
 
 ## References
 - Java: https://docs.oracle.com/javase/
-- Spring Boot: https://docs.spring.io/spring-boot/docs/current/reference/html/
-- PostgreSQL: https://www.postgresql.org/docs/
-- OWASP: https://cheatsheetseries.owasp.org/
