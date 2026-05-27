@@ -43,6 +43,66 @@ If no appropriate exception handler is found, then the program terminates.
 3. **Grouping and Differentiating Error Types**
    Each exception type indicates a particular error condition. You can create your own exceptions to signal domain-specific failures.
 
+### Java Exception Hierarchy
+
+All exceptions in Java are objects. They all inherit from `Throwable` at the top of the hierarchy.
+
+```
+Throwable
+├── Error                          (serious system-level problems — do NOT catch these)
+│   ├── OutOfMemoryError
+│   ├── StackOverflowError
+│   └── ...
+└── Exception                      (recoverable problems — these are what we handle)
+    ├── IOException                 ← checked
+    ├── FileNotFoundException       ← checked
+    ├── SQLException                ← checked
+    ├── ClassNotFoundException      ← checked
+    └── RuntimeException            ← unchecked (root of all unchecked exceptions)
+        ├── ArithmeticException
+        ├── NullPointerException
+        ├── ArrayIndexOutOfBoundsException
+        ├── IllegalArgumentException
+        ├── ClassCastException
+        └── ...
+```
+
+**Key distinction:**
+- **`Error`** — serious problems outside your control (e.g. JVM running out of memory). You should never try to catch these.
+- **`Exception`** — problems your program can anticipate and recover from. This is what we work with.
+- **`RuntimeException`** — a subclass of `Exception`. These are unchecked — the compiler does not force you to handle them.
+
+### Checked vs Unchecked Exceptions
+
+#### What is a Checked Exception?
+
+A **checked exception** is an exception that the Java compiler forces you to handle or declare. If you call a method that can throw a checked exception, you must either:
+- Handle it with a `try-catch` block, or
+- Declare it with `throws` in your method signature
+
+Checked exceptions represent conditions that are **outside the programmer's control** but are reasonably expected — for example, a file not being found, or a network connection failing.
+
+**Common checked exceptions:**
+| Exception | When it occurs |
+|-----------|---------------|
+| `IOException` | General input/output failure |
+| `FileNotFoundException` | File does not exist at the given path |
+| `SQLException` | Database access error |
+| `ClassNotFoundException` | Class cannot be found at runtime |
+
+#### What is an Unchecked Exception?
+
+An **unchecked exception** is an exception that the compiler does **not** force you to handle. They are subclasses of `RuntimeException` and typically represent **programming errors** — bugs in your code that should be fixed, not caught.
+
+**Common unchecked exceptions:**
+| Exception | When it occurs |
+|-----------|---------------|
+| `ArithmeticException` | Illegal arithmetic operation e.g. divide by zero |
+| `NullPointerException` | Accessing a method or field on a `null` reference |
+| `ArrayIndexOutOfBoundsException` | Accessing an array with an invalid index |
+| `IllegalArgumentException` | A method receives an argument it cannot accept |
+| `ClassCastException` | Illegal cast between incompatible types |
+
 ### Looking at Our First Exception
 
 Create a file `LearnExceptions.java` and code along.
@@ -113,18 +173,11 @@ As you can see, with LBYL, the developer proactively checks preconditions before
 
 ### Try-Catch-Finally
 
-The other approach is EAFP using a `try-catch` block.
+The other approach is EAFP using a `try-catch` block. Here is what each block does:
 
-```java
-try {
-  int result = divide(x, y);
-  System.out.println(result);
-} catch (ArithmeticException exception) {
-  System.out.println(exception);
-}
-```
-
-You can also add a `finally` block to execute code that should always run:
+- **`try`** — wraps the code that might throw an exception. Java monitors this block and if an exception occurs, execution immediately jumps to the matching `catch` block.
+- **`catch`** — defines how to handle a specific exception type. It only runs if the matching exception is thrown inside the `try` block. You can have multiple `catch` blocks for different exception types.
+- **`finally`** — runs **always**, whether an exception was thrown or not, whether it was caught or not. Use it for cleanup code that must always execute — such as closing a file, releasing a database connection, or freeing a resource.
 
 ```java
 try {
@@ -133,7 +186,7 @@ try {
 } catch (ArithmeticException exception) {
   System.out.println(exception);
 } finally {
-  System.out.println("This is the finally block");
+  System.out.println("This always runs — cleanup goes here");
 }
 ```
 
@@ -165,17 +218,31 @@ try {
 }
 ```
 
-### Checked vs Unchecked Exceptions
+### Try-with-Resources (Java 7+, recommended in Java 21)
 
-#### Unchecked Exceptions
+When working with resources like files, database connections, or network streams, you must always close them after use — even if an exception occurs. Forgetting to close a resource causes **resource leaks**, which can crash your application over time.
 
-`ArithmeticException` and `ArrayIndexOutOfBoundsException` are **unchecked exceptions** (subclasses of `RuntimeException`). They are not checked at compile time and typically signal programming errors. Anticipate and prevent them via validation.
+Before Java 7, developers had to close resources manually in a `finally` block:
 
-#### Checked Exceptions
+```java
+FileInputStream f = null;
+try {
+  f = new FileInputStream("test.txt");
+  // read file...
+} catch (IOException e) {
+  System.out.println(e.getMessage());
+} finally {
+  if (f != null) {
+    try {
+      f.close(); // must close manually — and this can also throw!
+    } catch (IOException e) {
+      System.out.println(e.getMessage());
+    }
+  }
+}
+```
 
-**Checked exceptions** are verified at compile time (e.g., `IOException`, `FileNotFoundException`). The compiler requires handling or propagation.
-
-**Try-with-resources (Java 7+, recommended in Java 21):**
+This is verbose and error-prone. **Try-with-resources** solves this by automatically closing any resource declared in the `try(...)` parentheses when the block ends — whether normally or due to an exception.
 
 ```java
 import java.io.IOException;
@@ -191,6 +258,8 @@ try (FileInputStream f = new FileInputStream("test.txt");
   System.out.println(exception.getMessage());
 }
 ```
+
+> Any class that implements the `AutoCloseable` interface can be used in try-with-resources. Java's built-in I/O classes, database connections, and most resource classes already implement it.
 
 ### Propagating Exceptions Up the Call Stack
 
@@ -225,20 +294,53 @@ public static void main(String[] args) {
 }
 ```
 
-### General vs Specific Exception Type
+### General vs Specific Exception Types
 
-Prefer **specific** catches where possible:
+When catching exceptions, always prefer **specific** exception types over general ones.
+
+**Specific catch — preferred:**
 
 ```java
 try {
   int result = 10 / 0;
   System.out.println(result);
 } catch (ArithmeticException exception) {
-  System.out.println(exception);
+  System.out.println("Cannot divide by zero: " + exception.getMessage());
 }
 ```
 
-General exception types (`Exception`, `RuntimeException`) are superclasses — avoid catching them broadly unless you have a good reason.
+**General catch — avoid:**
+
+```java
+try {
+  int result = 10 / 0;
+  System.out.println(result);
+} catch (Exception exception) {
+  // Bad: you have no idea what actually went wrong
+  System.out.println("Something went wrong: " + exception.getMessage());
+}
+```
+
+**Why specific is better:**
+
+- It makes your intent clear — you know exactly what error you are handling
+- A broad `catch (Exception e)` will silently swallow unexpected exceptions you didn't anticipate, making bugs very hard to find
+- It forces you to think about each failure mode individually
+
+**When you have multiple possible exceptions, catch each one specifically:**
+
+```java
+try {
+  int[] numbers = { 1, 2, 3 };
+  int result = numbers[5] / 0;
+} catch (ArrayIndexOutOfBoundsException e) {
+  System.out.println("Invalid index: " + e.getMessage());
+} catch (ArithmeticException e) {
+  System.out.println("Cannot divide by zero: " + e.getMessage());
+}
+```
+
+> **Rule of thumb:** Only catch `Exception` broadly at the very top level of your application (e.g. in `main`) as a last resort safety net — never deep inside your business logic.
 
 ---
 
@@ -339,13 +441,42 @@ You are now ready to add SLF4J and Logback dependencies in Part 4.
 
 ---
 
-## Part 4: Logging Using `slf4j`
+## Part 4: Logging Using SLF4J
 
-With our Maven project, we'll add dependencies for SLF4J (facade) and an implementation.
+### What is Logging?
 
-### What is `slf4j`?
+Logging is the practice of recording information about your program's execution to an output destination — such as the console, a file, or an external monitoring system.
 
-SLF4J (Simple Logging Facade for Java) is a logging abstraction that lets you code to a stable API and swap implementations (e.g., Logback) without changing your application code.
+You might be used to using `System.out.println()` to debug your code. In a real production application, this is not enough because:
+
+- You **cannot control the output level** — everything prints regardless of severity
+- There are **no timestamps** — you don't know when something happened
+- You **cannot filter** — you can't say "only show me errors in production"
+- You **cannot redirect output** — `System.out` always goes to the console, never to a file or monitoring system
+- It **cannot be turned off** without deleting the lines from your code
+
+A logging framework solves all of these problems. It lets you:
+- Attach a **severity level** to every message (DEBUG, INFO, WARN, ERROR)
+- **Filter by level** — show DEBUG in development, only ERROR in production
+- **Write to multiple destinations** at once — console and file simultaneously
+- Include **timestamps, thread names, and class names** automatically
+- Change logging behaviour through **configuration only**, without touching your code
+
+### What is SLF4J?
+
+**SLF4J (Simple Logging Facade for Java)** is not a logging framework itself — it is a **facade** (an abstraction layer) that sits in front of a real logging implementation.
+
+Think of it like this: SLF4J is the **interface**, and Logback (or Log4j, or others) is the **implementation**.
+
+```
+Your Code
+    ↓
+SLF4J API  (you always code against this)
+    ↓
+Logback / Log4j / slf4j-simple  (the actual implementation — swappable)
+```
+
+The benefit is that your application code **never changes** when you switch logging frameworks. You only swap the dependency in `pom.xml`. This is the same principle as coding to a `List` interface instead of `ArrayList` — your code stays stable, only the implementation changes.
 
 ### Adding Dependencies (SLF4J 2.x)
 
@@ -367,7 +498,7 @@ Search on https://mvnrepository.com/ and add:
 </dependency>
 ```
 
-### Using `slf4j`
+### Using SLF4J
 
 ```java
 import org.slf4j.Logger;
@@ -392,13 +523,20 @@ Run the application and check the console output.
 
 ---
 
-## Part 5: Logging Using `logback`
+## Part 5: Logging Using Logback
 
 The advantage of SLF4J is easy swapping of logging frameworks. Now switch to **Logback**.
 
-### What is `logback`?
+### What is Logback?
 
-`logback` is a modern logging framework (successor to `log4j`) that's fast and flexible.
+**Logback** is a mature, production-grade logging framework for Java. It is the **natural successor to Log4j** and is designed to be faster and more capable. It is the most widely used SLF4J implementation in the Java ecosystem.
+
+Logback gives you:
+- Full control over **log levels** per class or package
+- **Multiple appenders** — write to console, file, database, or remote systems simultaneously
+- **Rolling file appenders** — automatically rotate log files by size or date
+- **Pattern-based formatting** — customise exactly what each log line looks like
+- Configuration via `logback.xml` — **no code changes needed** to change logging behaviour
 
 ### Adding Dependencies (Logback 1.5.x)
 
@@ -412,9 +550,13 @@ Remove `slf4j-simple` from `pom.xml` and add:
 </dependency>
 ```
 
-Just by changing dependencies, you've switched from `slf4j-simple` to `logback-classic`.
+Just by changing this one dependency, you have switched from `slf4j-simple` to `logback-classic`. Your application code using SLF4J stays exactly the same — this is the facade pattern in action.
 
-### Configure `logback`
+### Configure Logback
+
+Logback is configured using a file called `logback.xml` placed in `src/main/resources`.
+
+> **Note:** If you do not see a `resources` folder under `src/main`, create it manually: right-click `src/main` → New Folder → name it `resources`.
 
 Create `src/main/resources/logback.xml`:
 
@@ -435,7 +577,7 @@ Create `src/main/resources/logback.xml`:
 
 Run the application and check the console output. Everything should work as before.
 
-### Logging Levels in `logback`
+### Logging Levels in Logback
 
 | Level   | Description                                                                  |
 | ------- | ---------------------------------------------------------------------------- |
@@ -445,19 +587,32 @@ Run the application and check the console output. Everything should work as befo
 | `WARN`  | Potentially harmful situations.                                              |
 | `ERROR` | Error events that might still allow the application to continue.             |
 
-### Logging to a File in `logback`
+Levels are hierarchical — setting the root level to `INFO` means only `INFO`, `WARN`, and `ERROR` messages appear. `DEBUG` and `TRACE` are suppressed. This is how you control verbosity between development and production environments — **just change the level in `logback.xml`, no code changes needed**.
+
+### Logging to a File
+
+In production, your application runs on a server — there is no console for you to watch. **File logging** is essential because:
+
+- It creates a **persistent record** of everything that happened — even after the server restarts
+- You can **review logs after the fact** when investigating a bug or incident
+- Multiple team members can access the same log file
+- Log files can be shipped to centralised monitoring tools (e.g. Datadog, Splunk, ELK Stack)
+
+Console logs disappear the moment a process stops. File logs stay. In real applications you typically configure **both** — console for development convenience, file for production persistence.
+
+To log to both console and file, update `logback.xml`:
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
-  <!-- Console -->
+  <!-- Console Appender -->
   <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
     <encoder>
       <pattern>%d{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n</pattern>
     </encoder>
   </appender>
 
-  <!-- File -->
+  <!-- File Appender -->
   <appender name="FILE" class="ch.qos.logback.core.FileAppender">
     <file>logs/application.log</file>
     <encoder>
@@ -471,6 +626,8 @@ Run the application and check the console output. Everything should work as befo
   </root>
 </configuration>
 ```
+
+The `logs/application.log` file will be created automatically by Logback when the application runs — you do not need to create it manually.
 
 Check `logs/application.log` after running.
 

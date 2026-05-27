@@ -107,13 +107,23 @@ Open the `pom.xml` file and set the **compiler release to 21**.
 
 <img src="./assets/images/maven_setup9.PNG" width="500">
 
-Update the `pom.xml`:
+The generated `pom.xml` will contain these two old compiler tags inside `<properties>` — **delete them both**:
+
+```xml
+<maven.compiler.source>1.7</maven.compiler.source>
+<maven.compiler.target>1.7</maven.compiler.target>
+```
+
+Then replace with the new `release` tag so your `<properties>` block looks like this:
 
 ```xml
 <properties>
+  <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   <maven.compiler.release>21</maven.compiler.release>
 </properties>
 ```
+
+> **Important:** Do not keep both the old `source`/`target` tags and the new `release` tag — having both causes a conflict. Remove the old ones first.
 
 > ✅ Once done, verify your project runs by opening `App.java` and running it. You should see `Hello World!` in the terminal. You are now ready for class.
 
