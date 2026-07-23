@@ -26,12 +26,43 @@ While watching, refer to **lesson.md Part 1 and Part 2** and pay attention to:
 
 ## Task 2 — Maven Project Setup (15 minutes)
 
+### Maven Concepts — Read This First
+
+Read this short section before watching the video so the setup steps make sense. (The in-class `lesson.md` Part 3 only covers *verifying* your setup — the concepts below are covered here in self-study.)
+
+**What is Maven and why is it used?**
+Maven is a **build automation and dependency management tool** for Java. It does two main jobs:
+- **Manages dependencies** — instead of manually downloading library `.jar` files and adding them to your project, you declare the libraries you need and Maven automatically downloads them (and anything *they* depend on) for you.
+- **Automates the build lifecycle** — it standardises compiling, testing, packaging, and running your project with simple commands, so every project builds the same predictable way.
+
+**What is `pom.xml` and what does it contain?**
+`pom.xml` (Project Object Model) is Maven's configuration file — the single place that describes your project. It contains:
+- Project identity — `groupId`, `artifactId`, and `version`
+- **Dependencies** — the external libraries your project uses
+- Build settings — such as the Java compiler version (e.g. `maven.compiler.release`)
+- Plugins and other build configuration
+
+**How do you add a dependency?**
+A dependency is an external library your project relies on. You add one by placing a `<dependency>` block inside the `<dependencies>` section of `pom.xml`, specifying three coordinates — `groupId`, `artifactId`, and `version`:
+
+```xml
+<dependency>
+  <groupId>org.slf4j</groupId>
+  <artifactId>slf4j-api</artifactId>
+  <version>2.0.12</version>
+</dependency>
+```
+
+When you save, Maven downloads that library automatically. You can find these coordinates for any library on https://mvnrepository.com/. (You will do exactly this in class when adding SLF4J and Logback.)
+
+### Video
+
 Watch the following video on Maven project setup:
 
 - 📹 [Maven Project Setup in Java — [VIDEO URL NEEDED](https://www.youtube.com/watch?v=rqGRW-ocYpY)]
   
 
-While watching, refer to **lesson.md Part 3** and pay attention to:
+While watching, keep the concepts above in mind and pay attention to:
 - What Maven is and why it is used
 - What a `pom.xml` file is and what it contains
 - How to add a dependency to a Maven project

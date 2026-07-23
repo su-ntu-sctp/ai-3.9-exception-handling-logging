@@ -261,6 +261,8 @@ try (FileInputStream f = new FileInputStream("test.txt");
 
 > Any class that implements the `AutoCloseable` interface can be used in try-with-resources. Java's built-in I/O classes, database connections, and most resource classes already implement it.
 
+> **Note on the catch type:** catch `IOException`, not `FileNotFoundException`. The automatic close on `FileInputStream` can throw `IOException`, so catching only the narrower `FileNotFoundException` will fail to compile. `IOException` covers both the missing-file case (from the constructor) and any failure during the auto-close.
+
 ### Propagating Exceptions Up the Call Stack
 
 We can also propagate exceptions up the call stack. Put the previous file-reading code into a method and **do not** handle it there — let callers decide.
@@ -413,11 +415,17 @@ public static int sumPositiveArray(int[] numbers) {
 
 #### Task 2: Checked Custom Exception
 
-Create a checked exception `DivideByZeroElementException`. Next, create a `divideByElementAtIndex` method that takes an array of integers and an index. Throw `DivideByZeroElementException` if the divisor is zero, and return the division result otherwise.
+Create a **checked** exception `DivideByZeroElementException` (extend `Exception`).
+
+Next, create a `divideByElementAtIndex` method that takes an array of integers and an index. The method should divide a fixed dividend (e.g. `100`) by the **element at that index** — so the element `numbers[index]` is the divisor. Throw `DivideByZeroElementException` if that element is zero; otherwise return the division result.
+
+Because the exception is **checked**, the method must declare `throws DivideByZeroElementException`, and the caller in `main` must handle it with a `try-catch`. (This is the checked mirror of Task 1's unchecked exception — the method propagates, the caller handles.)
 
 ```java
 public static int divideByElementAtIndex(int[] numbers, int index) throws DivideByZeroElementException {
-  // your code here
+  // divisor is numbers[index]
+  // throw DivideByZeroElementException if numbers[index] is zero
+  // otherwise return 100 / numbers[index]
 }
 ```
 
@@ -425,7 +433,13 @@ public static int divideByElementAtIndex(int[] numbers, int index) throws Divide
 
 ## Part 3: Maven Project Setup
 
-> ✅ You should have completed Maven setup as part of your self-study (studies.md Task 2). If you have not done so, refer to studies.md now and complete the setup before continuing.
+> ✅ **This is an in-class verification step, not a setup step.** Both the installation and the project setup were completed before this lesson:
+> - **Maven installation** was done as **pre-work in Lesson 1** (see Lesson 1's `setup.md`).
+> - **Maven project creation** (via `maven-archetype-quickstart`, setting the `pom.xml` compiler release to 21, and verifying `Hello World!`) was done as **self-study for this lesson** (see `studies.md` Task 2).
+>
+> If you have not completed either, refer to those materials now and complete them before continuing.
+
+In class, we simply verify the pre-class work is in place before we start adding logging dependencies.
 
 **Step 1** — Verify Maven is installed:
 
@@ -433,7 +447,7 @@ public static int divideByElementAtIndex(int[] numbers, int index) throws Divide
 mvn -v
 ```
 
-**Step 2** — Open your Maven project from self-study in VSCode.
+**Step 2** — Open your Maven project (created in `studies.md` Task 2) in VSCode.
 
 **Step 3** — Open `App.java` and run it. You should see `Hello World!` in the terminal.
 
@@ -556,7 +570,7 @@ Just by changing this one dependency, you have switched from `slf4j-simple` to `
 
 Logback is configured using a file called `logback.xml` placed in `src/main/resources`.
 
-> **Note:** If you do not see a `resources` folder under `src/main`, create it manually: right-click `src/main` → New Folder → name it `resources`.
+> **Note:** If you do not see a `resources` folder under `src/main`, create it manually: right-click `src/main` → New Folder → name it `resources`. It sits beside the `java` folder (they are siblings), not inside it.
 
 Create `src/main/resources/logback.xml`:
 
@@ -640,22 +654,4 @@ In your Maven project `App.java`:
 - Add `INFO` logs for application start and end
 - Trigger an `ArithmeticException` (divide by zero) inside a `try-catch` and log it with `ERROR`
 - Run the app and verify output appears in both the console and `logs/application.log`
-- Note: SLF4J/Logback uses `ERROR` — there is no `SEVERE` like in JUL
-
----
-
-## 🔵 Optional: Multi-catch
-
-Java lets you catch multiple exception types in a single `catch` block using the `|` operator. This is useful when two or more exceptions should be handled the same way.
-
-```java
-try {
-  // code that may throw different exceptions
-} catch (IllegalArgumentException | IllegalStateException e) {
-  System.out.println("Bad input/state: " + e.getMessage());
-}
-```
-
----
-
-END
+- Note: SLF4J/Logback's most severe level is `ERROR` — there is no level above it.
