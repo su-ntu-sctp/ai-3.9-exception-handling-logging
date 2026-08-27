@@ -190,21 +190,25 @@ try {
 }
 ```
 
-Let's look at an array example.
+Let's look at a more realistic example — accessing a customer from a list by position. Say we have a list of customer names, and we try to read a position that does not exist:
 
 ```java
-int[] numbers = { 1, 2, 3, 4, 5 };
-int index = 5;
-System.out.println(numbers[index]); // throws ArrayIndexOutOfBoundsException
+List<String> customers = new ArrayList<>();
+customers.add("Alice");
+customers.add("Bob");
+customers.add("Charlie");
+
+int index = 5; // out of range — valid positions are 0, 1, 2
+System.out.println(customers.get(index)); // throws IndexOutOfBoundsException
 ```
 
 LBYL:
 
 ```java
-if (index >= 0 && index < numbers.length) {
-  System.out.println(numbers[index]);
+if (index >= 0 && index < customers.size()) {
+  System.out.println(customers.get(index));
 } else {
-  System.out.println("Index is out of bounds");
+  System.out.println("No customer at that position");
 }
 ```
 
@@ -212,11 +216,13 @@ EAFP:
 
 ```java
 try {
-  System.out.println(numbers[index]);
-} catch (ArrayIndexOutOfBoundsException exception) {
-  System.out.println(exception);
+  System.out.println(customers.get(index));
+} catch (IndexOutOfBoundsException exception) {
+  System.out.println("No customer at that position");
 }
 ```
+
+> **Note:** for a `List` we check the size with `customers.size()` (an array would use `.length`), and an out-of-range position on a list throws `IndexOutOfBoundsException`.
 
 ### Try-with-Resources (Java 7+, recommended in Java 21)
 
@@ -300,11 +306,20 @@ public static void main(String[] args) {
 
 When catching exceptions, always prefer **specific** exception types over general ones.
 
+Let's use a list of customer scores. We want to divide a fixed total by a score, but a score might be zero, and we might ask for a position that doesn't exist.
+
+```java
+List<Integer> scores = new ArrayList<>();
+scores.add(90);
+scores.add(0);
+scores.add(75);
+```
+
 **Specific catch — preferred:**
 
 ```java
 try {
-  int result = 10 / 0;
+  int result = 100 / scores.get(1); // scores.get(1) is 0 → ArithmeticException
   System.out.println(result);
 } catch (ArithmeticException exception) {
   System.out.println("Cannot divide by zero: " + exception.getMessage());
@@ -315,7 +330,7 @@ try {
 
 ```java
 try {
-  int result = 10 / 0;
+  int result = 100 / scores.get(1);
   System.out.println(result);
 } catch (Exception exception) {
   // Bad: you have no idea what actually went wrong
@@ -333,10 +348,11 @@ try {
 
 ```java
 try {
-  int[] numbers = { 1, 2, 3 };
-  int result = numbers[5] / 0;
-} catch (ArrayIndexOutOfBoundsException e) {
-  System.out.println("Invalid index: " + e.getMessage());
+  int value = scores.get(5);      // no position 5 → IndexOutOfBoundsException
+  int result = 100 / value;       // could also be a divide-by-zero
+  System.out.println(result);
+} catch (IndexOutOfBoundsException e) {
+  System.out.println("Invalid position: " + e.getMessage());
 } catch (ArithmeticException e) {
   System.out.println("Cannot divide by zero: " + e.getMessage());
 }
@@ -350,82 +366,96 @@ try {
 
 We can also create our own custom exceptions. To create a **checked** exception, extend `Exception`. To create an **unchecked** exception, extend `RuntimeException`.
 
-Unchecked example:
+Custom exceptions let us signal problems in the language of our own application. Instead of a generic message, we can say exactly what went wrong in *our* domain — for example, a customer that could not be found.
+
+Let's work with a simple `Customer` class.
 
 ```java
-public class InvalidArrayIndexException extends RuntimeException {
-  public InvalidArrayIndexException(String message) {
+public class Customer {
+  private int id;
+  private String name;
+
+  public Customer(int id, String name) {
+    this.id = id;
+    this.name = name;
+  }
+
+  public int getId() {
+    return id;
+  }
+
+  public String getName() {
+    return name;
+  }
+}
+```
+
+Now create an **unchecked** custom exception for the case where a customer is not found.
+
+```java
+public class CustomerNotFoundException extends RuntimeException {
+  public CustomerNotFoundException(String message) {
     super(message);
   }
+}
+```
+
+Here is a method that looks up a customer in a list by id, and throws our custom exception if there is no match.
+
+```java
+public static Customer findCustomerById(List<Customer> customers, int id) {
+  for (Customer customer : customers) {
+    if (customer.getId() == id) {
+      return customer;
+    }
+  }
+  throw new CustomerNotFoundException("No customer found with id: " + id);
 }
 ```
 
 Usage:
 
 ```java
+List<Customer> customers = new ArrayList<>();
+customers.add(new Customer(1, "Alice"));
+customers.add(new Customer(2, "Bob"));
+
 try {
-  if (index < 0 || index > numbers.length - 1) {
-    throw new InvalidArrayIndexException(index + " is not a valid index!");
-  }
-  System.out.println(numbers[index]);
-} catch (InvalidArrayIndexException exception) {
-  System.out.println(exception);
+  Customer customer = findCustomerById(customers, 5);
+  System.out.println(customer.getName());
+} catch (CustomerNotFoundException exception) {
+  System.out.println(exception.getMessage());
 }
 ```
 
-Another unchecked example:
-
-```java
-public class NegativeNumberException extends RuntimeException {
-  public NegativeNumberException(String message) {
-    super(message);
-  }
-}
-```
-
-```java
-public static int dividePositiveNumbers(int a, int b) {
-  if (a < 0 || b < 0) {
-    throw new NegativeNumberException("Negative numbers are not allowed.");
-  }
-  return a / b;
-}
-```
-
-```java
-try {
-  int result = dividePositiveNumbers(10, -2);
-  System.out.println(result);
-} catch (NegativeNumberException exception) {
-  System.out.println(exception);
-}
-```
+Looking something up that isn't there — a "not found" — is one of the most common real-world exceptions you will ever write. Notice how much clearer `CustomerNotFoundException` is than a generic error: the message even carries the exact id that failed.
 
 ### 👨‍💻 Activity: Custom Exceptions **(10 minutes)**
 
+Use the `Customer` class from above for both tasks. Assume you have a `List<Customer>` to work with.
+
 #### Task 1: Unchecked Custom Exception
 
-Create an unchecked exception `NoNegativeElementException`. Next, create a `sumPositiveArray` method that takes in an array of integers and throws `NoNegativeElementException` if the array contains a negative number, and returns the total sum of the array if all elements are positive.
+Create an unchecked exception `InvalidCustomerException`. Next, create an `addCustomer` method that takes a `List<Customer>` and a new `Customer`. Throw `InvalidCustomerException` if the new customer's name is empty (null or blank); otherwise add the customer to the list and return the new size of the list.
 
 ```java
-public static int sumPositiveArray(int[] numbers) {
+public static int addCustomer(List<Customer> customers, Customer newCustomer) {
   // your code here
 }
 ```
 
 #### Task 2: Checked Custom Exception
 
-Create a **checked** exception `DivideByZeroElementException` (extend `Exception`).
+Create a **checked** exception `CustomerAlreadyExistsException` (extend `Exception`).
 
-Next, create a `divideByElementAtIndex` method that takes an array of integers and an index. The method should divide a fixed dividend (e.g. `100`) by the **element at that index** — so the element `numbers[index]` is the divisor. Throw `DivideByZeroElementException` if that element is zero; otherwise return the division result.
+Next, create a `registerCustomer` method that takes a `List<Customer>` and a new `Customer`. Throw `CustomerAlreadyExistsException` if a customer with the same id already exists in the list; otherwise add the customer and return the new size of the list.
 
-Because the exception is **checked**, the method must declare `throws DivideByZeroElementException`, and the caller in `main` must handle it with a `try-catch`. (This is the checked mirror of Task 1's unchecked exception — the method propagates, the caller handles.)
+Because the exception is **checked**, the method must declare `throws CustomerAlreadyExistsException`, and the caller in `main` must handle it with a `try-catch`. (This is the checked mirror of Task 1's unchecked exception — the method propagates, the caller handles.)
 
 ```java
-public static int divideByElementAtIndex(int[] numbers, int index) throws DivideByZeroElementException {
-  // divisor is numbers[index]
-  // throw DivideByZeroElementException if numbers[index] is zero
-  // otherwise return 100 / numbers[index]
+public static int registerCustomer(List<Customer> customers, Customer newCustomer) throws CustomerAlreadyExistsException {
+  // throw CustomerAlreadyExistsException if a customer with newCustomer's id already exists
+  // otherwise add newCustomer and return customers.size()
 }
 ```
 
@@ -514,6 +544,8 @@ Search on https://mvnrepository.com/ and add:
 
 ### Using SLF4J
 
+Notice the log messages describe real application events — the kind of messages you would actually write in a customer-facing app.
+
 ```java
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -525,9 +557,9 @@ public class App {
   public static void main(String[] args) {
     System.out.println("Hello World!");
     logger.info("Application started");
-    logger.info("This is an informational message.");
-    logger.error("This is an error message.");
-    logger.warn("This is a warning message.");
+    logger.info("Fetching customer list");
+    logger.warn("Customer email is missing for id: 2");
+    logger.error("Failed to save customer: Alice");
     logger.info("Application ended");
   }
 }
@@ -649,9 +681,10 @@ For further reading, refer to the [logback documentation](http://logback.qos.ch/
 
 ### 👨‍💻 Activity: SLF4J + Logback **(5 minutes)**
 
-In your Maven project `App.java`:
+In your Maven project `App.java`, log a small customer workflow:
 
-- Add `INFO` logs for application start and end
-- Trigger an `ArithmeticException` (divide by zero) inside a `try-catch` and log it with `ERROR`
+- Add an `INFO` log for application start and end
+- Log an `INFO` message such as `"Processing customer: Alice"`
+- Calculate a customer's average order value as `totalSpent / orderCount`. With `orderCount = 0` this throws an `ArithmeticException` — trigger it inside a `try-catch` and log it with `ERROR`
 - Run the app and verify output appears in both the console and `logs/application.log`
 - Note: SLF4J/Logback's most severe level is `ERROR` — there is no level above it.
