@@ -390,20 +390,20 @@ public class Customer {
 }
 ```
 
-Now create an **unchecked** custom exception for the case where a customer is not found.
+Now create a **checked** custom exception for the case where a customer is not found. Because we extend `Exception` (and not `RuntimeException`), this is a **checked** exception — the compiler will force callers to deal with it.
 
 ```java
-public class CustomerNotFoundException extends RuntimeException {
+public class CustomerNotFoundException extends Exception {
   public CustomerNotFoundException(String message) {
     super(message);
   }
 }
 ```
 
-Here is a method that looks up a customer in a list by id, and throws our custom exception if there is no match.
+Here is a method that looks up a customer in a list by id, and throws our custom exception if there is no match. Since the exception is checked, the method **must** declare `throws CustomerNotFoundException`.
 
 ```java
-public static Customer findCustomerById(List<Customer> customers, int id) {
+public static Customer findCustomerById(List<Customer> customers, int id) throws CustomerNotFoundException {
   for (Customer customer : customers) {
     if (customer.getId() == id) {
       return customer;
@@ -413,7 +413,7 @@ public static Customer findCustomerById(List<Customer> customers, int id) {
 }
 ```
 
-Usage:
+The method does not handle the problem itself — it propagates it up to whoever called it. So the caller in `main` is now **forced** by the compiler to handle it with a `try-catch`:
 
 ```java
 List<Customer> customers = new ArrayList<>();
@@ -430,34 +430,62 @@ try {
 
 Looking something up that isn't there — a "not found" — is one of the most common real-world exceptions you will ever write. Notice how much clearer `CustomerNotFoundException` is than a generic error: the message even carries the exact id that failed.
 
+> **Try this:** remove the `throws CustomerNotFoundException` from the method signature and see what the compiler says. Then put it back and remove the `try-catch` from `main` instead. Both give compile errors — that is exactly what "checked" means: the compiler will not let you ignore it.
+
+Note the two keywords are different:
+- **`throw`** (no *s*) — an action. It fires the exception right now: `throw new CustomerNotFoundException(...)`
+- **`throws`** (with *s*) — a declaration on the method signature saying "this exception may come out of me, and I am not handling it"
+
 ### 👨‍💻 Activity: Custom Exceptions **(10 minutes)**
 
-Use the `Customer` class from above for both tasks. Assume you have a `List<Customer>` to work with.
+In the demo above we built a **checked** exception. Now you will build an **unchecked** one.
 
-#### Task 1: Unchecked Custom Exception
+Create an unchecked exception `InvalidCustomerException` and use it to reject a customer with an empty name. Because it extends `RuntimeException`, it is **unchecked** — no `throws` needed on the method, and the caller is not forced to catch it.
 
-Create an unchecked exception `InvalidCustomerException`. Next, create an `addCustomer` method that takes a `List<Customer>` and a new `Customer`. Throw `InvalidCustomerException` if the new customer's name is empty (null or blank); otherwise add the customer to the list and return the new size of the list.
+Copy the snippets below and fill in the blanks.
+
+**Step 1 — the exception class.** Create `InvalidCustomerException.java`:
+
+```java
+public class InvalidCustomerException extends _____________ {
+  public InvalidCustomerException(String message) {
+    _____________;
+  }
+}
+```
+
+**Step 2 — the method.** Add this to your class, alongside `main`. It should throw `InvalidCustomerException` if the new customer's name is empty; otherwise add the customer to the list and return the new size of the list.
 
 ```java
 public static int addCustomer(List<Customer> customers, Customer newCustomer) {
-  // your code here
+
+  if (newCustomer.getName() == null || newCustomer.getName().isBlank()) {
+    throw new _____________("Customer name cannot be empty");
+  }
+
+  customers._____________(newCustomer);
+  return customers._____________;
 }
 ```
 
-#### Task 2: Checked Custom Exception
-
-Create a **checked** exception `CustomerAlreadyExistsException` (extend `Exception`).
-
-Next, create a `registerCustomer` method that takes a `List<Customer>` and a new `Customer`. Throw `CustomerAlreadyExistsException` if a customer with the same id already exists in the list; otherwise add the customer and return the new size of the list.
-
-Because the exception is **checked**, the method must declare `throws CustomerAlreadyExistsException`, and the caller in `main` must handle it with a `try-catch`. (This is the checked mirror of Task 1's unchecked exception — the method propagates, the caller handles.)
+**Step 3 — call it from `main`.** Test both cases — a valid customer, and one with an empty name:
 
 ```java
-public static int registerCustomer(List<Customer> customers, Customer newCustomer) throws CustomerAlreadyExistsException {
-  // throw CustomerAlreadyExistsException if a customer with newCustomer's id already exists
-  // otherwise add newCustomer and return customers.size()
+List<Customer> customers = new ArrayList<>();
+
+// valid customer — should be added
+int size = addCustomer(customers, new Customer(1, "Alice"));
+System.out.println("Customers in list: " + size);
+
+// invalid customer — should throw
+try {
+  addCustomer(customers, new Customer(2, ""));
+} catch (_____________ exception) {
+  System.out.println(exception.getMessage());
 }
 ```
+
+> **Question to think about:** the `try-catch` in Step 3 is optional here — the code compiles fine without it. Why? (Compare this with the checked `CustomerNotFoundException` in the demo, where the compiler *forced* you to catch it.)
 
 ---
 
